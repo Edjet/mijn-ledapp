@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>ESP32 LED Controller</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: #111;
+    color: white;
+  }
+  button {
+    padding: 10px 20px;
+    margin: 10px;
+    font-size: 16px;
+    background: #28a745;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 8px;
+  }
+  input[type="color"] {
+    width: 100px;
+    height: 100px;
+    border: none;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+<h1>ESP32 LED Controller</h1>
+<button id="connect">🔍 Verbinden met ESP32</button>
+<br>
+<input type="color" id="colorPicker" value="#ff0000">
+
+<script>
+let bluetoothDevice;
+let ledCharacteristic;
+
+document.getElementById("connect").addEventListener("click", async () => {
+  try {
+    bluetoothDevice = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb'] // voorbeeld UUID
+    });
+    const server = await bluetoothDevice.gatt.connect();
+    const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
+    ledCharacteristic = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
+    alert("Verbonden met " + bluetoothDevice.name);
+  } catch (error) {
+    alert("Fout: " + error);
+  }
+});
+
+document.getElementById("colorPicker").addEventListener("input", () => {
+  if (!ledCharacteristic) return;
+  let color = document.getElementById("colorPicker").value; // bv. "#ff0000"
+  let r = parseInt(color.substr(1, 2), 16);
+  let g = parseInt(color.substr(3, 2), 16);
+  let b = parseInt(color.substr(5, 2), 16);
+  let data = new Uint8Array([r, g, b]);
+  ledCharacteristic.writeValue(data);
+});
+</script>
+</body>
+</html>
